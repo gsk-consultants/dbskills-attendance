@@ -12,43 +12,40 @@ import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function CheckInScreen({ navigation }) {
+export default function CheckOutScreen({ navigation }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [photo, setPhoto] = useState(null);
   const [location, setLocation] = useState(null);
   const [time, setTime] = useState("");
-const [cameraType, setCameraType] = useState("front");
-useEffect(() => {
-  (async () => {
-    const locStatus = await Location.requestForegroundPermissionsAsync();
+  const [cameraType, setCameraType] = useState("front");
 
-    if (locStatus.status === "granted") {
+  useEffect(() => {
+    (async () => {
+      const locStatus = await Location.requestForegroundPermissionsAsync();
 
-      // 🚀 Get instant last known location
-      const currentLocation = await Location.getLastKnownPositionAsync();
+      if (locStatus.status === "granted") {
+        const currentLocation = await Location.getLastKnownPositionAsync();
 
-      if (currentLocation) {
-        setLocation(currentLocation.coords);
-      } else {
-        // fallback if no cached location
-        const freshLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Low,
-        });
-        setLocation(freshLocation.coords);
+        if (currentLocation) {
+          setLocation(currentLocation.coords);
+        } else {
+          const freshLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Low,
+          });
+          setLocation(freshLocation.coords);
+        }
       }
-    }
 
-    const now = new Date();
-    setTime(
-      now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  })();
-}, []);
-
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
+    })();
+  }, []);
 
   const takePhoto = async () => {
     if (cameraRef.current) {
@@ -57,9 +54,9 @@ useEffect(() => {
     }
   };
 
-  const confirmCheckIn = () => {
+  const confirmCheckOut = () => {
     navigation.replace("Dashboard", {
-      checkInTime: time,
+      checkOutTime: time,
     });
   };
 
@@ -87,18 +84,19 @@ useEffect(() => {
         {/* HEADER */}
         <View style={styles.headerRow}>
           <View style={styles.titlePill}>
-            <Text style={styles.titleText}>Check In</Text>
+            <Text style={styles.titleText}>Check Out</Text>
           </View>
-<TouchableOpacity
-  style={styles.switchCircle}
-  onPress={() =>
-    setCameraType(prev =>
-      prev === "front" ? "back" : "front"
-    )
-  }
->
-  <Ionicons name="camera-reverse" size={20} />
-</TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.switchCircle}
+            onPress={() =>
+              setCameraType(prev =>
+                prev === "front" ? "back" : "front"
+              )
+            }
+          >
+            <Ionicons name="camera-reverse" size={20} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.closeCircle}
@@ -111,12 +109,11 @@ useEffect(() => {
         {/* CAMERA OR PREVIEW */}
         {!photo ? (
           <View style={styles.cameraWrapper}>
-          <CameraView
-  style={styles.camera}
-  ref={cameraRef}
-  facing={cameraType}
-/>
-
+            <CameraView
+              style={styles.camera}
+              ref={cameraRef}
+              facing={cameraType}
+            />
 
             <View style={styles.timePill}>
               <Ionicons
@@ -129,10 +126,7 @@ useEffect(() => {
           </View>
         ) : (
           <View style={styles.cameraWrapper}>
-            <Image
-              source={{ uri: photo }}
-              style={styles.camera}
-            />
+            <Image source={{ uri: photo }} style={styles.camera} />
 
             <View style={styles.timePill}>
               <Ionicons
@@ -145,7 +139,7 @@ useEffect(() => {
           </View>
         )}
 
-        {/* LOCATION CARD */}
+        {/* LOCATION */}
         {location && (
           <View style={styles.locationCard}>
             <View style={styles.locationHeader}>
@@ -175,17 +169,16 @@ useEffect(() => {
 
         {/* BUTTONS */}
         {!photo ? (
-<View style={{ marginTop: 20, marginBottom: 10 }}>
-  <TouchableOpacity
-    style={styles.primaryBtn}
-    onPress={takePhoto}
-  >
-    <Text style={styles.primaryBtnText}>
-      Take Photo
-    </Text>
-  </TouchableOpacity>
-</View>
-
+          <View style={{ marginTop: 20, marginBottom: 10 }}>
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={takePhoto}
+            >
+              <Text style={styles.primaryBtnText}>
+                Take Photo
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View style={styles.buttonRow}>
             <TouchableOpacity
@@ -197,10 +190,10 @@ useEffect(() => {
 
             <TouchableOpacity
               style={styles.primaryBtn}
-              onPress={confirmCheckIn}
+              onPress={confirmCheckOut}
             >
               <Text style={styles.primaryBtnText}>
-                Confirm Check In
+                Confirm Check Out
               </Text>
             </TouchableOpacity>
           </View>
@@ -209,6 +202,8 @@ useEffect(() => {
     </SafeAreaView>
   );
 }
+
+
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
@@ -374,4 +369,3 @@ switchCircle: {
     borderRadius: 20,
   },
 });
-

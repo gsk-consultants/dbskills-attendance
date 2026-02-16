@@ -12,12 +12,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import logo from "../assets/dbskills-logo.png";
+import { Image } from "react-native";
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
   const route = useRoute();
 
   const checkInTime = route?.params?.checkInTime;
+const checkOutTime = route?.params?.checkOutTime;
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-US", {
@@ -29,18 +32,31 @@ export default function DashboardScreen() {
 
   const [location, setLocation] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      let { status } =
-        await Location.requestForegroundPermissionsAsync();
+useEffect(() => {
+  (async () => {
+    let { status } =
+      await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") return;
+    if (status !== "granted") return;
 
-      let currentLocation =
-        await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation.coords);
-    })();
-  }, []);
+    // 🚀 Try cached location first (instant)
+    const lastLocation =
+      await Location.getLastKnownPositionAsync();
+
+    if (lastLocation) {
+      setLocation(lastLocation.coords);
+    } else {
+      // fallback (low accuracy = faster)
+      const freshLocation =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Low,
+        });
+
+      setLocation(freshLocation.coords);
+    }
+  })();
+}, []);
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,10 +66,13 @@ export default function DashboardScreen() {
         style={styles.header}
       >
         <View style={styles.topRow}>
-          <Text style={styles.homeText}>Home</Text>
+    <View style={styles.logoRow}>
+      <Image source={logo} style={styles.logo} />
+      <Text style={styles.brandText}>DB Skills</Text>
+    </View>
 
           <TouchableOpacity style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={22} color="#000" />
+            <Ionicons name="log-out-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -132,7 +151,12 @@ export default function DashboardScreen() {
             </TouchableOpacity>
 
             {/* CHECK OUT */}
-            <View style={styles.checkCard}>
+             
+            <TouchableOpacity
+  style={styles.checkCard}
+  onPress={() => navigation.navigate("CheckOut")}
+>
+
               <View style={styles.cardTopRow}>
                 <View style={styles.arrowCircle}>
                   <Ionicons
@@ -156,42 +180,54 @@ export default function DashboardScreen() {
               </View>
 
               <View style={styles.timeRow}>
-                <Text style={styles.dashTime}>--:--</Text>
+            <Text style={styles.dashTime}>
+  {checkOutTime ? checkOutTime : "--:--"}
+</Text>
+
 
                 <View style={styles.statusBadgeGray}>
-                  <Text style={styles.statusText}>
-                    n/a
-                  </Text>
+             {checkOutTime ? (
+  <View style={styles.successBadge}>
+    <Text style={styles.successText}>Success</Text>
+  </View>
+) : (
+  <View style={styles.statusBadgeGray}>
+    <Text style={styles.statusText}>n/a</Text>
+  </View>
+)}
+
                 </View>
               </View>
 
               <Text style={styles.pendingText}>
                 Not checked out yet
               </Text>
-            </View>
+           </TouchableOpacity>
           </View>
 
-          {/* MAP */}
-          <View style={styles.mapBox}>
-            {location && (
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }}
-              >
-                <Marker
-                  coordinate={{
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                  }}
-                />
-              </MapView>
-            )}
-          </View>
+<View style={styles.mapBox}>
+  {location ? (
+    <MapView
+      style={styles.map}
+      initialRegion={{
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }}
+    >
+      <Marker coordinate={location} />
+    </MapView>
+  ) : (
+    <View style={styles.mapLoading}>
+      <Ionicons name="location-outline" size={24} color="#999" />
+      <Text style={{ marginTop: 5, color: "#999" }}>
+        Fetching location...
+      </Text>
+    </View>
+  )}
+</View>
+
                     {/* Attendance */}
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Your attendance</Text>
@@ -221,7 +257,22 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+logoRow: {
+  flexDirection: "row",
+  alignItems: "center",
+},
 
+logo: {
+  width: 60,
+  height: 60,
+  resizeMode: "contain",
+  marginRight: 10,
+},
+brandText: {
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: "bold",
+},
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -234,7 +285,7 @@ const styles = StyleSheet.create({
   },
 
   logoutBtn: {
-    backgroundColor: "#F5E7D3",
+    backgroundColor: "#F0622D",
     padding: 10,
     borderRadius: 30,
   },
@@ -308,7 +359,7 @@ const styles = StyleSheet.create({
   },
 
   arrowCircle: {
-    backgroundColor: "#8FA3FF",
+    backgroundColor: "#2BB5CE",
     padding: 8,
     borderRadius: 20,
   },
@@ -362,6 +413,12 @@ const styles = StyleSheet.create({
   link: {
     color: "#2BB5CE",
   },
+mapLoading: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#EDEDED",
+},
 
  mapBox: {
   height: 160,
