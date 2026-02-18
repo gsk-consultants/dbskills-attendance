@@ -11,6 +11,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { checkInApi } from "../api/attendanceApi";
 
 export default function CheckInScreen({ navigation }) {
   const cameraRef = useRef(null);
@@ -57,11 +58,36 @@ useEffect(() => {
     }
   };
 
-  const confirmCheckIn = () => {
-    navigation.replace("Dashboard", {
-      checkInTime: time,
+const confirmCheckIn = async () => {
+  try {
+    const res = await checkInApi({
+      time,
+      location,
+      photo,
     });
-  };
+
+    console.log("CheckIn Response:", res);
+
+    if (res.success) {
+      navigation.replace("Dashboard", {
+        checkInTime: time,
+      });
+    } else {
+      alert(res.message);
+    }
+
+  } catch (error) {
+    console.log("CheckIn Error:", error);
+    console.log("Backend Error:", error?.response?.data);
+
+    alert(
+      error?.response?.data?.message ||
+      "Check-in failed"
+    );
+  }
+};
+
+
 
   if (!permission) return <View style={{ flex: 1 }} />;
 

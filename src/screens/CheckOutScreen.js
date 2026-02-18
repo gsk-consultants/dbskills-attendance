@@ -11,6 +11,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { checkOutApi } from "../api/attendanceApi";
 
 export default function CheckOutScreen({ navigation }) {
   const cameraRef = useRef(null);
@@ -54,11 +55,26 @@ export default function CheckOutScreen({ navigation }) {
     }
   };
 
-  const confirmCheckOut = () => {
-    navigation.replace("Dashboard", {
-      checkOutTime: time,
+const confirmCheckOut = async () => {
+  try {
+    const res = await checkOutApi({
+      time,
+      location,
+      photo,
     });
-  };
+
+    if (res.success) {
+      navigation.replace("Dashboard", {
+        checkOutTime: time,
+      });
+    } else {
+      alert(res.message);
+    }
+  } catch (error) {
+    alert("Check-out failed");
+  }
+};
+
 
   if (!permission) return <View style={{ flex: 1 }} />;
 

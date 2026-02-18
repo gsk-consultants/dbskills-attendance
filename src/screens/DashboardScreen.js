@@ -14,13 +14,17 @@ import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import logo from "../assets/dbskills-logo.png";
 import { Image } from "react-native";
-
+import { getProfile, getTodayAttendance } from "../api/attendanceApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 export default function DashboardScreen() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const checkInTime = route?.params?.checkInTime;
-const checkOutTime = route?.params?.checkOutTime;
+const [employeeName, setEmployeeName] = useState("");
+const [checkInTime, setCheckInTime] = useState(null);
+const [checkOutTime, setCheckOutTime] = useState(null);
+
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-US", {
@@ -56,8 +60,67 @@ useEffect(() => {
     }
   })();
 }, []);
+useEffect(() => {
+  loadProfile();
+  loadAttendance();
+}, []);
+
+const loadProfile = async () => {
+  try {
+    const res = await getProfile();
+
+    if (res.success) {
+      setEmployeeName(res.data.name);
+    }
+
+  } catch (error) {
+    console.log("Profile error:", error);
+  }
+};
 
 
+const loadAttendance = async () => {
+  try {
+    const res = await getTodayAttendance();
+
+    if (res.success && res.data) {
+      setCheckInTime(res.data.checkIn?.time || null);
+      setCheckOutTime(res.data.checkOut?.time || null);
+    } else {
+      setCheckInTime(null);
+      setCheckOutTime(null);
+    }
+
+  } catch (error) {
+    console.log("Attendance error:", error?.response?.data || error.message);
+  }
+};
+
+ 
+
+const handleLogout = () => {
+  Alert.alert(
+    "Logout",
+    "Are you sure you want to logout?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await AsyncStorage.removeItem("token");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+        },
+      },
+    ]
+  );
+};
+
+
+ 
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
@@ -71,16 +134,20 @@ useEffect(() => {
       <Text style={styles.brandText}>DB Skills</Text>
     </View>
 
-          <TouchableOpacity style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={22} color="#fff" />
-          </TouchableOpacity>
+<TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+  <Ionicons name="log-out-outline" size={22} color="#fff" />
+</TouchableOpacity>
+
         </View>
 
         <Text style={styles.smallText}>
           Time to do what you do best !
         </Text>
+<Text style={styles.helloText}>
+  👋 Hello, {employeeName ? employeeName : "Employee"}
+</Text>
 
-        <Text style={styles.helloText}>Hello, KishoreS</Text>
+
       </LinearGradient>
 
       {/* MAIN */}
@@ -123,31 +190,21 @@ useEffect(() => {
                 </View>
               </View>
 
-              <View style={styles.timeRow}>
-                <Text style={styles.dashTime}>
-                  {checkInTime ? checkInTime : "--:--"}
-                </Text>
+<Text style={styles.timeTextLarge}>
+      {checkInTime ? checkInTime : "--:--"}
+    </Text>
 
-                {checkInTime ? (
-                  <View style={styles.successBadge}>
-                    <Text style={styles.successText}>
-                      Success
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.statusBadgeGray}>
-                    <Text style={styles.statusText}>
-                      n/a
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.pendingText}>
-                {checkInTime
-                  ? "Checked in successfully"
-                  : "Not checked in yet"}
-              </Text>
+    <View style={styles.statusRow}>
+      {checkInTime ? (
+        <View style={styles.successBadge}>
+          <Text style={styles.successText}>Success</Text>
+        </View>
+      ) : (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.pendingBadgeText}>Pending</Text>
+        </View>
+      )}
+    </View>
             </TouchableOpacity>
 
             {/* CHECK OUT */}
@@ -178,30 +235,21 @@ useEffect(() => {
                   />
                 </View>
               </View>
+  <Text style={styles.timeTextLarge}>
+      {checkOutTime ? checkOutTime : "--:--"}
+    </Text>
 
-              <View style={styles.timeRow}>
-            <Text style={styles.dashTime}>
-  {checkOutTime ? checkOutTime : "--:--"}
-</Text>
-
-
-                <View style={styles.statusBadgeGray}>
-             {checkOutTime ? (
-  <View style={styles.successBadge}>
-    <Text style={styles.successText}>Success</Text>
-  </View>
-) : (
-  <View style={styles.statusBadgeGray}>
-    <Text style={styles.statusText}>n/a</Text>
-  </View>
-)}
-
-                </View>
-              </View>
-
-              <Text style={styles.pendingText}>
-                Not checked out yet
-              </Text>
+    <View style={styles.statusRow}>
+      {checkOutTime ? (
+        <View style={styles.successBadge}>
+          <Text style={styles.successText}>Success</Text>
+        </View>
+      ) : (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.pendingBadgeText}>Pending</Text>
+        </View>
+      )}
+    </View>
            </TouchableOpacity>
           </View>
 
@@ -375,6 +423,31 @@ brandText: {
     alignItems: "center",
     marginTop: 15,
   },
+ timeTextLarge: {
+  fontSize: 25,
+  fontWeight: "bold",
+  color: "#111",
+  letterSpacing: 2,
+  padding:4
+},
+
+statusRow: {
+  marginTop: 15,
+  alignItems: "flex-start",
+},
+
+successBadge: {
+  backgroundColor: "#D1FAE5",
+  paddingHorizontal: 12,
+  paddingVertical: 5,
+  borderRadius: 20,
+},
+
+successText: {
+  color: "#059669",
+  fontWeight: "600",
+  fontSize: 12,
+},
 
   dashTime: {
     fontSize: 24,

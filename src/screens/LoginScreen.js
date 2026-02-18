@@ -15,10 +15,41 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "../theme/colors";
 import logo from "../assets/dbskills-logo.png";
 import { useNavigation } from "@react-navigation/native";
+import { employeeLogin } from "../api/authApi";
 
 export default function LoginScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
 const navigation = useNavigation();
+const [username, setUsername] = useState("");
+const [password, setPassword] = useState("");
+const [loading, setLoading] = useState(false);
+
+const handleLogin = async () => {
+  if (!username || !password) {
+    alert("Please enter username and password");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const res = await employeeLogin({
+      username,
+      password,
+    });
+
+    if (res.success && res.role === "user") {
+      navigation.replace("Dashboard");
+    } else {
+      alert("Invalid credentials");
+    }
+
+  } catch (error) {
+    alert("Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,22 +71,28 @@ const navigation = useNavigation();
         {/* Email */}
         <View style={styles.inputContainer}>
           <MaterialIcons name="email" size={22} color={COLORS.primary} />
-          <TextInput
-            placeholder="Email Address"
-            placeholderTextColor={COLORS.gray}
-            style={styles.input}
-          />
+        <TextInput
+  placeholder="Username"
+  placeholderTextColor={COLORS.gray}
+  style={styles.input}
+  value={username}
+  onChangeText={setUsername}
+/>
+
         </View>
 
         {/* Password */}
         <View style={styles.inputContainer}>
           <Ionicons name="lock-closed" size={22} color={COLORS.primary} />
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor={COLORS.gray}
-            secureTextEntry={!passwordVisible}
-            style={styles.input}
-          />
+      <TextInput
+  placeholder="Password"
+  placeholderTextColor={COLORS.gray}
+  secureTextEntry={!passwordVisible}
+  style={styles.input}
+  value={password}
+  onChangeText={setPassword}
+/>
+
           <TouchableOpacity
             onPress={() => setPasswordVisible(!passwordVisible)}
           >
@@ -68,8 +105,7 @@ const navigation = useNavigation();
         </View>
 
         {/* Button */}
-        <TouchableOpacity style={styles.button} onPress={() => navigation.replace("Dashboard")}
->
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>LOGIN</Text>
         </TouchableOpacity>
 
