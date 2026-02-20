@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import logo from "../assets/dbskills-logo.png";
+import logo from "../assets/dbskillslogo.png";
 import { Image } from "react-native";
 import { getProfile, getTodayAttendance } from "../api/attendanceApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";

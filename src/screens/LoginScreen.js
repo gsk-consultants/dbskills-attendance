@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "../theme/colors";
-import logo from "../assets/dbskills-logo.png";
+import logo from "../assets/dbskillslogo.png";
 import { useNavigation } from "@react-navigation/native";
 import { employeeLogin } from "../api/authApi";
 
