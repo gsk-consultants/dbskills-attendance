@@ -1,17 +1,29 @@
 import axiosInstance from "./config";
 
-export const checkInApi = async (data) => {
+export const checkInApi = async (formData) => {
   const response = await axiosInstance.post(
     "/attendance/checkin",
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
+
   return response.data;
 };
 
-export const checkOutApi = async (data) => {
+
+export const checkOutApi = async (formData) => {
   const response = await axiosInstance.post(
     "/attendance/checkout",
-    data
+   formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return response.data;
 };

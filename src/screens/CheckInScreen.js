@@ -12,14 +12,16 @@ import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { checkInApi } from "../api/attendanceApi";
-
+import { ActivityIndicator } from "react-native";
 export default function CheckInScreen({ navigation }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [photo, setPhoto] = useState(null);
   const [location, setLocation] = useState(null);
   const [time, setTime] = useState("");
-const [cameraType, setCameraType] = useState("front");
+  const [loading, setLoading] = useState(false);
+  const [cameraType, setCameraType] = useState("front");
+
 useEffect(() => {
   (async () => {
     const locStatus = await Location.requestForegroundPermissionsAsync();
@@ -51,22 +53,38 @@ useEffect(() => {
 }, []);
 
 
-  const takePhoto = async () => {
-    if (cameraRef.current) {
-      const result = await cameraRef.current.takePictureAsync();
-      setPhoto(result.uri);
-    }
-  };
-
-const confirmCheckIn = async () => {
-  try {
-    const res = await checkInApi({
-      time,
-      location,
-      photo,
+const takePhoto = async () => {
+  if (cameraRef.current) {
+    const result = await cameraRef.current.takePictureAsync({
+      quality: 0.25,          // 👈 reduce quality (0.1 – 1)
+      base64: false,
+      skipProcessing: true,
     });
 
-    console.log("CheckIn Response:", res);
+    setPhoto(result.uri);
+  }
+};
+
+const confirmCheckIn = async () => {
+  if (!photo || !location) {
+    return alert("Photo and location required");
+  }
+
+  try {
+    setLoading(true); // 🔥 start loader
+
+    const formData = new FormData();
+
+    formData.append("photo", {
+      uri: photo,
+      name: "checkin.jpg",
+      type: "image/jpeg",
+    });
+
+    formData.append("latitude", location.latitude);
+    formData.append("longitude", location.longitude);
+
+    const res = await checkInApi(formData);
 
     if (res.success) {
       navigation.replace("Dashboard", {
@@ -77,21 +95,15 @@ const confirmCheckIn = async () => {
     }
 
   } catch (error) {
-    console.log("CheckIn Error:", error);
-    console.log("Backend Error:", error?.response?.data);
-
-    alert(
-      error?.response?.data?.message ||
-      "Check-in failed"
-    );
+    console.log("CheckIn Error:", error?.response?.data || error.message);
+    alert(error?.response?.data?.message || "Check-in failed");
+  } finally {
+    setLoading(false); // 🔥 stop loader
   }
 };
 
-
-
-  if (!permission) return <View style={{ flex: 1 }} />;
-
-  if (!permission.granted) {
+if (!permission) return <View style={{ flex: 1 }} />;
+if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
         <Text style={{ marginBottom: 20 }}>
@@ -115,7 +127,7 @@ const confirmCheckIn = async () => {
           <View style={styles.titlePill}>
             <Text style={styles.titleText}>Check In</Text>
           </View>
-<TouchableOpacity
+{/* <TouchableOpacity
   style={styles.switchCircle}
   onPress={() =>
     setCameraType(prev =>
@@ -124,7 +136,7 @@ const confirmCheckIn = async () => {
   }
 >
   <Ionicons name="camera-reverse" size={20} />
-</TouchableOpacity>
+</TouchableOpacity> */}
 
           <TouchableOpacity
             style={styles.closeCircle}
@@ -221,14 +233,19 @@ const confirmCheckIn = async () => {
               <Text>Retake</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={confirmCheckIn}
-            >
-              <Text style={styles.primaryBtnText}>
-                Confirm Check In
-              </Text>
-            </TouchableOpacity>
+         <TouchableOpacity
+  style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
+  onPress={confirmCheckIn}
+  disabled={loading}
+>
+  {loading ? (
+    <ActivityIndicator style={styles.primaryBtnText} size="small" color="#fff" />
+  ) : (
+    <Text style={styles.primaryBtnText}>
+      Confirm Check In
+    </Text>
+  )}
+</TouchableOpacity>
           </View>
         )}
       </View>

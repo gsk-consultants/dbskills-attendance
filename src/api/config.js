@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://192.168.1.11:4000/api"; // 👈 replace with your PC IP
+const API_BASE_URL = "https://attendance-api-woad.vercel.app/api"; 
+// const API_BASE_URL = "http://192.168.1.12:4000/api"; // 👈 replace with your PC IP
+// 👈 replace with your PC IP
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

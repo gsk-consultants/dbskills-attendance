@@ -20,10 +20,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.kishore1724.dbskills_attendance"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "be13ff77-964b-46a6-a875-a502f3cd2db5"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

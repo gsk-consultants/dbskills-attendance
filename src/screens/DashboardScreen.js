@@ -24,7 +24,7 @@ export default function DashboardScreen() {
 const [employeeName, setEmployeeName] = useState("");
 const [checkInTime, setCheckInTime] = useState(null);
 const [checkOutTime, setCheckOutTime] = useState(null);
-
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-US", {
@@ -36,6 +36,16 @@ const [checkOutTime, setCheckOutTime] = useState(null);
 
   const [location, setLocation] = useState(null);
 
+   const liveTime = currentTime.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const getGreeting = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
 useEffect(() => {
   (async () => {
     let { status } =
@@ -78,14 +88,21 @@ const loadProfile = async () => {
   }
 };
 
+const formatTime = (time) => {
+  if (!time) return null;
+  return new Date(time).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const loadAttendance = async () => {
   try {
     const res = await getTodayAttendance();
 
     if (res.success && res.data) {
-      setCheckInTime(res.data.checkIn?.time || null);
-      setCheckOutTime(res.data.checkOut?.time || null);
+      setCheckInTime(formatTime(res.data.checkIn?.time));
+      setCheckOutTime(formatTime(res.data.checkOut?.time));
     } else {
       setCheckInTime(null);
       setCheckOutTime(null);
@@ -95,6 +112,7 @@ const loadAttendance = async () => {
     console.log("Attendance error:", error?.response?.data || error.message);
   }
 };
+
 
  
 
@@ -123,32 +141,54 @@ const handleLogout = () => {
  
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <LinearGradient
-        colors={["#0F172A", "#0B1220"]}
-        style={styles.header}
-      >
-        <View style={styles.topRow}>
-    <View style={styles.logoRow}>
-      <Image source={logo} style={styles.logo} />
-      <Text style={styles.brandText}>DB Skills</Text>
-    </View>
+        <LinearGradient
+          colors={["#0D1B2A", "#1B2D45", "#163354"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          {/* Top Row */}
+          <View style={styles.topRow}>
+            <View style={styles.logoRow}>
+              <View style={styles.logoWrap}>
+                <Image source={logo} style={styles.logo} />
+              </View>
+              <Text style={styles.brandText}>DB Skills</Text>
+            </View>
 
-<TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-  <Ionicons name="log-out-outline" size={22} color="#fff" />
-</TouchableOpacity>
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+              <Ionicons name="log-out-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
 
-        </View>
+          {/* Greeting */}
+          <View style={styles.greetSection}>
+            <Text style={styles.greetSmall}>{getGreeting()} 👋</Text>
+            <Text style={styles.greetName}>
+              {employeeName || "Employee"}
+            </Text>
+            {/* <Text style={styles.greetDate}>{formattedDate}</Text> */}
+          </View>
 
-        <Text style={styles.smallText}>
-          Time to do what you do best !
-        </Text>
-<Text style={styles.helloText}>
-  👋 Hello, {employeeName ? employeeName : "Employee"}
-</Text>
+     {/* Greeting + Clock Row */}
+<View style={styles.greetRow}>
 
+  {/* Left Side */}
+  <View style={styles.greetSection}>
+    <Text style={styles.greetSmall}>{getGreeting()} 👋</Text>
+    <Text style={styles.greetName}>
+      {employeeName || "Employee"}
+    </Text>
+  </View>
 
-      </LinearGradient>
+  {/* Right Side */}
+  <View style={styles.clockBadge}>
+    <Ionicons name="time-outline" size={15} color="#2BB5CE" />
+    <Text style={styles.clockText}>{liveTime}</Text>
+  </View>
+
+</View> 
+        </LinearGradient>
 
       {/* MAIN */}
       <View style={styles.mainCard}>
@@ -301,61 +341,118 @@ const styles = StyleSheet.create({
    
   },
 
-  header: {
-    padding: 20,
-    paddingBottom: 40,
+ header: {
+    paddingHorizontal: 22,
+    paddingTop: 16,
+    paddingBottom: 36,
   },
-logoRow: {
-  flexDirection: "row",
-  alignItems: "center",
-},
-
-logo: {
-  width: 60,
-  height: 60,
-  resizeMode: "contain",
-  marginRight: 10,
-},
-brandText: {
-  color: "#fff",
-  fontSize: 18,
-  fontWeight: "bold",
-},
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
-  homeText: {
-    color: "#fff",
-    fontSize: 18,
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-
+  logoWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  logo: {
+    width: 36,
+    height: 36,
+    resizeMode: "contain",
+  },
+  brandText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
   logoutBtn: {
     backgroundColor: "#F0622D",
-    padding: 10,
-    borderRadius: 30,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  smallText: {
-    color: "#B0B8C5",
-    marginTop: 20,
+  greetSection: {
+    marginTop: 22,
   },
-
-  helloText: {
+  greetSmall: {
+    color: "#93C5FD",
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  greetName: {
     color: "#fff",
-    fontSize: 28,
-    fontWeight: "bold",
-    marginTop: 5,
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: -0.3,
   },
+  greetDate: {
+    color: "#94A3B8",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  clockBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(43,181,206,0.15)",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 16,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(43,181,206,0.3)",
+  },
+  clockText: {
+    color: "#2BB5CE",
+    fontWeight: "700",
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+greetRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: 24,
+},
+
+greetSection: {
+  flex: 1,
+},
+
+clockBadge: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "rgba(43,181,206,0.15)",
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 20,
+  borderWidth: 1,
+  borderColor: "rgba(43,181,206,0.3)",
+},
 
   mainCard: {
     flex: 1,
     backgroundColor: "#F4F4F4",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 20,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  marginTop: -20,
+    paddingTop: 24,
+    paddingHorizontal: 18,
   },
 
   overviewRow: {

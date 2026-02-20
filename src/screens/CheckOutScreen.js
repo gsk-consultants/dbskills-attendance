@@ -12,6 +12,7 @@ import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { checkOutApi } from "../api/attendanceApi";
+import { ActivityIndicator } from "react-native";
 
 export default function CheckOutScreen({ navigation }) {
   const cameraRef = useRef(null);
@@ -20,6 +21,7 @@ export default function CheckOutScreen({ navigation }) {
   const [location, setLocation] = useState(null);
   const [time, setTime] = useState("");
   const [cameraType, setCameraType] = useState("front");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -47,21 +49,38 @@ export default function CheckOutScreen({ navigation }) {
       );
     })();
   }, []);
+const takePhoto = async () => {
+  if (cameraRef.current) {
+    const result = await cameraRef.current.takePictureAsync({
+      quality: 0.25,          // 👈 reduce quality (0.1 – 1)
+      base64: false,
+      skipProcessing: true,
+    });
 
-  const takePhoto = async () => {
-    if (cameraRef.current) {
-      const result = await cameraRef.current.takePictureAsync();
-      setPhoto(result.uri);
-    }
-  };
+    setPhoto(result.uri);
+  }
+};
 
 const confirmCheckOut = async () => {
+  if (!photo || !location) {
+    return alert("Photo and location required");
+  }
+
   try {
-    const res = await checkOutApi({
-      time,
-      location,
-      photo,
+    setLoading(true); // 🔥 START LOADER
+
+    const formData = new FormData();
+
+    formData.append("photo", {
+      uri: photo,
+      name: "checkout.jpg",
+      type: "image/jpeg",
     });
+
+    formData.append("latitude", location.latitude);
+    formData.append("longitude", location.longitude);
+
+    const res = await checkOutApi(formData);
 
     if (res.success) {
       navigation.replace("Dashboard", {
@@ -70,8 +89,12 @@ const confirmCheckOut = async () => {
     } else {
       alert(res.message);
     }
+
   } catch (error) {
-    alert("Check-out failed");
+    console.log("Checkout Error:", error?.response?.data || error.message);
+    alert(error?.response?.data?.message || "Check-out failed");
+  } finally {
+    setLoading(false); // 🔥 STOP LOADER
   }
 };
 
@@ -103,7 +126,7 @@ const confirmCheckOut = async () => {
             <Text style={styles.titleText}>Check Out</Text>
           </View>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.switchCircle}
             onPress={() =>
               setCameraType(prev =>
@@ -112,7 +135,7 @@ const confirmCheckOut = async () => {
             }
           >
             <Ionicons name="camera-reverse" size={20} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             style={styles.closeCircle}
@@ -204,17 +227,30 @@ const confirmCheckOut = async () => {
               <Text>Retake</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={confirmCheckOut}
-            >
-              <Text style={styles.primaryBtnText}>
-                Confirm Check Out
-              </Text>
-            </TouchableOpacity>
+<TouchableOpacity
+  style={[
+    styles.primaryBtn,
+    loading && { opacity: 0.7 }
+  ]}
+  onPress={confirmCheckOut}
+  disabled={loading}
+>
+  {loading ? (
+    <ActivityIndicator  style={styles.primaryBtnText} size="small" color="#fff" />
+  ) : (
+    <Text style={styles.primaryBtnText}>
+      Confirm Check Out
+    </Text>
+  )}
+</TouchableOpacity>
           </View>
         )}
       </View>
+      {loading && (
+  <View style={styles.overlay}>
+    <ActivityIndicator size="large" color="#fff" />
+  </View>
+)}
     </SafeAreaView>
   );
 }
@@ -244,7 +280,13 @@ headerRow: {
   marginBottom: 10,
 },
 
-
+overlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: "rgba(0,0,0,0.5)",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 999,
+},
   titlePill: {
     backgroundColor: "#F2F2F2",
     paddingHorizontal: 15,
